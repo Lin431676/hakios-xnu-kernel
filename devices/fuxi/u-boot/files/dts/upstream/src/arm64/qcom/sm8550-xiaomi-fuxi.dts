@@ -432,3 +432,19 @@
 &xo_board {
 	clock-frequency = <76800000>;
 };
+
+/*
+ * USB: bring up the DWC3 controller + the eUSB2 PHY so U-Boot's fastboot gadget
+ * enumerates to the host (the whole HakiOS chain talks fastboot over USB).
+ * The QMP USB3-DP PHY (usb_dp_qmpphy) stays off: U-Boot has no qmp-usb3-dp
+ * driver for SM8550, and fastboot only needs USB 2.0 HighSpeed.
+ */
+&usb_1_hsphy {
+	status = "okay";
+};
+
+&usb_1 {
+	dr_mode = "peripheral";
+	maximum-speed = "high-speed";
+	status = "okay";
+};
