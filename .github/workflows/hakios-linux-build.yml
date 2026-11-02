@@ -39,7 +39,8 @@ jobs:
 
       - name: Sync device repositories (redwood)
         run: |
-          make devices
+          # make devices 只 list，要真正克隆用 sync
+          tools/hakios-device.py sync
 
       - name: Set up kernel deps (stage 1)
         run: |
