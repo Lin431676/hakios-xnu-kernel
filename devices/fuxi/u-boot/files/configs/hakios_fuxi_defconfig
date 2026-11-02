@@ -35,6 +35,15 @@ CONFIG_FASTBOOT_CMD_OEM_CONSOLE=y
 CONFIG_FASTBOOT_OEM_RUN=y
 # CONFIG_REQUIRE_SERIAL_CONSOLE is not set
 
+# debug: print the driver/probe log to the console (vidconsole), so an early hang
+# shows its last steps on the screen. Remove once the bring-up is past this stage.
+CONFIG_LOG=y
+CONFIG_CMD_LOG=y
+CONFIG_LOG_MAX_LEVEL=7
+CONFIG_LOG_DEFAULT_LEVEL=7
+CONFIG_LOG_ERROR_RETURN=y
+CONFIG_LOGF_FUNC=y
+
 # the fastboot buffer takes a whole HKUB container: the loader and a payload of up to 63 MiB
 CONFIG_FASTBOOT_BUF_SIZE=0x8000000
 
