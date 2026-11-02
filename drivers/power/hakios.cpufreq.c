@@ -63,6 +63,13 @@ tell(const char *format, ...)
 #define XO_KHZ                  19200
 #define ALTERNATE_KHZ           300000          /* source 0: a fixed 300 MHz */
 
+/*
+ * The EPSS base above is the reference phone's (POCO X5 Pro, SC7280). Another SoC family carries its own in its
+ * soc.args (the phone's device tree), which the run scripts add to the command line: soc_epss=<pa>. SM8550
+ * ("kalama", fuxi) is 0x17d91000, three domains again (A510 x3, A715/A710 x4, X3 x1).
+ */
+static uint32_t epss_phys = EPSS_PHYS;
+
 /* How fast a simple loop runs, in thousands of iterations per millisecond. */
 static uint32_t
 loop_speed(void)
@@ -92,7 +99,7 @@ raise_domain(uint32_t domain, uint32_t cores)
 	uint32_t top = 0, top_khz = 0, was;
 	vm_offset_t base;
 
-	base = ml_io_map(EPSS_PHYS + domain * EPSS_DOMAIN_SIZE, EPSS_DOMAIN_SIZE);
+	base = ml_io_map(epss_phys + domain * EPSS_DOMAIN_SIZE, EPSS_DOMAIN_SIZE);
 	for (uint32_t row = 0; row < EPSS_TABLE_ROWS; row++) {
 		uint32_t entry = *(volatile uint32_t *)(base + EPSS_FREQ_TABLE + 4 * row);
 		uint32_t khz = (entry >> 30) ? XO_KHZ * (entry & 0xff) : ALTERNATE_KHZ;
@@ -309,6 +316,8 @@ load_start(void)
 #define CMD_DB_PHYS             0x80860000UL
 #define CMD_DB_SIZE             0x20000UL
 #define CMD_DB_BCM              5               /* the kind of resource in a slave's id: bus clock managers */
+/* another SoC family carries its own in soc.args: soc_cmd_db=<pa> (SM8550: 0x81c60000) */
+static uint32_t cmd_db_phys = CMD_DB_PHYS;
 
 struct cmd_db_slave {
 	uint16_t id, header_offset, data_offset, count, version, reserved[3];
@@ -345,7 +354,7 @@ static void
 ddr_look(void)
 {
 	/* (memory, not registers: mapped so that reads of any size and alignment are allowed) */
-	const struct cmd_db_header *db = (const struct cmd_db_header *)ml_io_map_wcomb(CMD_DB_PHYS, CMD_DB_SIZE);
+	const struct cmd_db_header *db = (const struct cmd_db_header *)ml_io_map_wcomb(cmd_db_phys, CMD_DB_SIZE);
 
 	if (db->magic[0] != 0xdb || db->magic[1] != 0x30 || db->magic[2] != 0x03 || db->magic[3] != 0x0c) {
 		tell("ddr: no command database\n");
@@ -440,7 +449,7 @@ static bool ddr_voted;
 static uint32_t
 cmd_db_address(const char *name)
 {
-	const struct cmd_db_header *db = (const struct cmd_db_header *)ml_io_map_wcomb(CMD_DB_PHYS, CMD_DB_SIZE);
+	const struct cmd_db_header *db = (const struct cmd_db_header *)ml_io_map_wcomb(cmd_db_phys, CMD_DB_SIZE);
 	char id[8] = { 0 };
 
 	if (db->magic[0] != 0xdb || db->magic[1] != 0x30 || db->magic[2] != 0x03 || db->magic[3] != 0x0c) {
@@ -562,6 +571,9 @@ hakios_cpufreq_init(void)
 	const ml_topology_info_t *topology = ml_get_topology_info();
 	uint32_t enabled = 0, membench = 0, cores[EPSS_DOMAINS] = { 0 }, before, here;
 
+	/* the EPSS base the phone's device tree carries (soc.args); the reference phone's default is kept otherwise */
+	(void)PE_parse_boot_argn("soc_epss", &epss_phys, sizeof(epss_phys));
+	(void)PE_parse_boot_argn("soc_cmd_db", &cmd_db_phys, sizeof(cmd_db_phys));
 	load_start();
 	enabled = 2;
 	PE_parse_boot_argn("ddr", &enabled, sizeof(enabled));
