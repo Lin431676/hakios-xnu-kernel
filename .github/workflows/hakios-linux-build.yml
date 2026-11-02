@@ -1,0 +1,62 @@
+name: hakiOS kernel build (Linux)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hakios-linux-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out hakiOS
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git curl tar xz-utils make clang lld flex bison m4 perl python3 autoconf automake libssl-dev fakeroot rsync zip libxml2
+
+      - name: Install theos (with Linux iOS toolchain + SDK)
+        run: |
+          # theos's install-theos auto-downloads the iOS toolchain (clang+llvm+ld64) and SDK
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)" <<< "n" || true
+          # verify toolchain
+          ls -la "$HOME/theos/toolchain/linux/iphone/bin/" 2>/dev/null | head || echo "toolchain 未装好"
+          test -x "$HOME/theos/toolchain/linux/iphone/bin/clang" && echo "clang OK" || echo "clang MISSING"
+
+      - name: Set up kernel deps (stage 1)
+        run: |
+          bash xnu-deps/setup.sh --stage1
+
+      - name: Build the kernel (redwood, the reference device)
+        run: |
+          make redwood_defconfig
+          make kernel
+
+      - name: Report result
+        if: always()
+        run: |
+          echo "=== kernel artifacts ==="
+          ls -la hakios-kernel 2>/dev/null || echo "no hakios-kernel produced"
+
+      - name: Upload kernel
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hakios-kernel
+          path: hakios-kernel
+          if-no-files-found: warn
+          retention-days: 7
