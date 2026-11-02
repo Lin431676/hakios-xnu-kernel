@@ -35,9 +35,13 @@ def main():
     nodes = mod.nodes_of(open(args[0], "rb").read())
     phandle_reg = {}
     for path, props in nodes.items():
-        if "compatible" in props and b"qcom,tsens26xx" in props["compatible"] and "phandle" in props:
-            reg = cells(props["reg"])             # srot base/size, tm base/size
-            phandle_reg[cells(props["phandle"])[0]] = reg[2] if len(reg) >= 4 else reg[0]
+        if "compatible" in props and "phandle" in props:
+            comp = props["compatible"]
+            # SC7280 ("qcom,tsens26xx") and SM8550 ("qcom,tsens-v2") both use tsens-v2; the older name is the
+            # reference phone's. Match either so a kalama tree's three blocks are read too.
+            if b"qcom,tsens26xx" in comp or b"qcom,tsens-v2" in comp:
+                reg = cells(props["reg"])         # TM base/size, SROT base/size (the node's name is the TM address)
+                phandle_reg[cells(props["phandle"])[0]] = reg[0]
     zones = []
     for path, props in sorted(nodes.items()):
         parts = path.split("/")
