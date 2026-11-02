@@ -27,13 +27,23 @@ jobs:
         run: |
           uefi/u-boot/build.sh fuxi
 
+      - name: Pack the boot image (U-Boot only, waits for the host over fastboot)
+        run: |
+          # mkubootimg needs devices/fuxi/prebuilt/{device-tree.dtb,mkbootimg.py} (checked in)
+          python3 tools/mkubootimg.py -d fuxi --no-ramdisk -o hakios-u-boot.img
+          ls -la hakios-u-boot.img
+
       - name: Report the result
         run: |
           echo "=== u-boot.bin ==="
           ls -la u-boot/build-fuxi/u-boot.bin 2>/dev/null || echo "no u-boot.bin produced"
+          echo "=== boot image ==="
+          ls -la hakios-u-boot.img 2>/dev/null || echo "no boot image produced"
 
       - name: Upload the U-Boot binary
         uses: actions/upload-artifact@v4
         with:
           name: fuxi-u-boot
-          path: u-boot/build-fuxi/u-boot.bin
+          path: |
+            u-boot/build-fuxi/u-boot.bin
+            hakios-u-boot.img
