@@ -1,0 +1,36 @@
+# HakiOS defconfig for the Xiaomi 13 (fuxi, SM8550, devices/fuxi): the common kernel's configuration, the SM8550 family's
+# facts and this phone's own, put together the way Android puts a device's kernel configuration together.
+# Bring-up profile: only what a first boot needs -- display (UEFI framebuffer), touch (ST FTM5), UFS storage. The SoC-specific
+# drivers (cpufreq/socinfo/thermal/pmic) and every peripheral are left out until their SM8550 addresses are filled in, so the
+# kernel compiles and links first; they come back one at a time as each driver is ported.
+#include common_defconfig
+#include sm8550.config
+#include fuxi.config
+
+CONFIG_DEVICE="fuxi"
+CONFIG_SOC="sm8550"
+
+# --- bring-up: leave out the SoC-specific drivers until SM8550 addresses are filled in ---
+# CONFIG_HAKIOS_CPUFREQ is not set
+# CONFIG_HAKIOS_SOCINFO is not set
+# CONFIG_HAKIOS_THERMAL is not set
+# CONFIG_HAKIOS_PMIC is not set
+# CONFIG_HAKIOS_BATTGUARD is not set
+
+# --- peripherals: off until their drivers are ported to SM8550 ---
+# CONFIG_HAKIOS_ADSP is not set
+# CONFIG_HAKIOS_SPEAKER is not set
+# CONFIG_HAKIOS_SOUND is not set
+# CONFIG_HAKIOS_MIC is not set
+# CONFIG_HAKIOS_BT is not set
+# CONFIG_HAKIOS_CAMERA is not set
+# CONFIG_HAKIOS_TORCH is not set
+# CONFIG_HAKIOS_ADRENO is not set
+# CONFIG_HAKIOS_HAPTIC is not set
+# CONFIG_HAKIOS_QMI is not set
+# CONFIG_HAKIOS_MODEM is not set
+# CONFIG_HAKIOS_WIFI is not set
+# CONFIG_HAKIOS_BATTERY is not set
+
+# --- touch: ST FTM5 (not Goodix; a FTM5 driver is still to be ported) ---
+# CONFIG_HAKIOS_GOODIX is not set
