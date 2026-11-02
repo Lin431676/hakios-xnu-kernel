@@ -33,16 +33,16 @@
  *              and which firmware images it says it authenticates
  *  12  asks    TrustZone to check the signature of the GPU's "zap shader", the signed image
  *              without which the 3D core stays locked in secure mode: its header goes from the
- *              small image (fw/a660_zap.mdt) into memory of ours that TrustZone is pointed at
+ *              small image (fw/a740_zap.mdt) into memory of ours that TrustZone is pointed at
  *  13  writes  page tables for the memory the GMU's firmware asks for, and the SMMU: a
  *              translation context with those tables, and the GMU's requests sent through it
- *  14  writes  the GMU's firmware (fw/a660_gmu.bin) into its own memory and into that memory
+ *  14  writes  the GMU's firmware (fw/gmu_gen70200.bin) into its own memory and into that memory
  *  15  writes  the GMU's configuration, and lets its processor out of reset: the firmware runs
  *  16  writes  the GMU's connection to RPMh; starts its message queues ("HFI")
  *  17  talks   to the GMU: the tables it needs, and the request to power the 3D core, whose
  *              registers are then read
  *  18  writes  the 3D core's translation context, with its ring and its microcode
- *              (fw/a660_sqe.fw) in it
+ *              (fw/a740_sqe.fw) in it
  *  19  asks    TrustZone to load the zap shader (and first to give up the one a kernel before
  *              this one may have left; the stop at the end of a run asks for that too)
  *  20  writes  the 3D core's registers; starts its command processor and gives it its first
@@ -1630,7 +1630,7 @@ image_file(const char *directory, const char *name, uint64_t *size)
 /*
  * The first of the three calls with which Linux has a zap shader loaded (mdt_loader.c:
  * qcom_mdt_pas_init, qcom_scm.c: qcom_scm_pas_init_image): TrustZone is given the image's header --
- * the ELF header and the block of hashes and certificates, which is all of the file a660_zap.mdt
+ * the ELF header and the block of hashes and certificates, which is all of the file a740_zap.mdt
  * -- and checks the signature. Nothing of the GPU is involved, so it can be asked now. The other
  * two (where the image will be, and "authenticate and start") need the 3D core powered.
  *
@@ -1648,7 +1648,7 @@ zap_header(uint64_t *phys)
 	uint64_t size = 0;
 	uint32_t segments, hashes;
 
-	header = image_file("fw", "a660_zap.mdt", &size);
+	header = image_file("fw", "a740_zap.mdt", &size);
 	if (header == NULL) {
 		return false;
 	}
@@ -1682,7 +1682,7 @@ step_zap_signature(void)
 	uint64_t header = 0, answer = ~0ull;
 	int32_t result;
 
-	announce("find the zap shader's header, fw/a660_zap.mdt, in the small image that came with the kernel");
+	announce("find the zap shader's header, fw/a740_zap.mdt, in the small image that came with the kernel");
 	if (!zap_header(&header)) {
 		return false;
 	}
@@ -1743,8 +1743,8 @@ step_gmu_space(void)
 	if (!cx_ready()) {
 		return false;
 	}
-	announce("find the GMU's firmware, fw/a660_gmu.bin, in the small image, and make the memory it asks for");
-	gmu_firmware = image_file("fw", "a660_gmu.bin", &gmu_firmware_size);
+	announce("find the GMU's firmware, fw/gmu_gen70200.bin, in the small image, and make the memory it asks for");
+	gmu_firmware = image_file("fw", "gmu_gen70200.bin", &gmu_firmware_size);
 	if (gmu_firmware == NULL) {
 		return false;
 	}
@@ -1878,7 +1878,7 @@ step_gmu_firmware(void)
 #define GMU_RSCC_CONTROL_REQ    GMU_WORD(0x9307)
 #define GMU_AO_AHB_FENCE_CTRL   GMU_WORD(0x9310)
 #define GMU_AHB_FENCE_RANGE_0   GMU_WORD(0x9311)
-#define GMU_CHIP                0x06035000      /* dt qcom,chipid 0x06030500 the way the firmware wants it */
+#define GMU_CHIP                0x07020100      /* A740: dt qcom,chipid 0x43050a01; the GMU firmware's own chipid (Linux .gmu_chipid, GEN7_2_1) */
 #define GMU_STARTED_MASK        0x1ff           /* of fw_init_result, for firmware newer than core 0x20010004 */
 #define GMU_STARTED             0x100
 #define GMU_FAILED              0xe00
@@ -2390,7 +2390,7 @@ step_core_power(void)
 
 /*
  * The 3D core takes its orders as words in a ring of memory, which a small processor inside it
- * ("SQE", with microcode of its own: a660_sqe.fw) reads up to where a register says we have
+ * ("SQE", with microcode of its own: a740_sqe.fw) reads up to where a register says we have
  * written. Like the GMU it reaches memory through the SMMU: stream 0, to which this gives
  * context 0, with tables of ours that hold the ring, the microcode and later what is drawn into.
  * What is written to the core's registers before its processor is started, and in what order,
@@ -2566,8 +2566,8 @@ step_core_space(void)
 		return false;
 	}
 	PE_parse_boot_argn("adreno_stream1", &stream1, sizeof(stream1));
-	announce("make the 3D core's memory: its ring, its microcode (fw/a660_sqe.fw), a page to try writing to");
-	microcode = image_file("fw", "a660_sqe.fw", &size);
+	announce("make the 3D core's memory: its ring, its microcode (fw/a740_sqe.fw), a page to try writing to");
+	microcode = image_file("fw", "a740_sqe.fw", &size);
 	if (microcode == NULL || size < 8 || size > 0x40000 ||
 	    !block_new(&core_space, &core_ring, CORE_RING_ADDRESS, CORE_RING_SIZE, PTE_CORE) ||
 	    !block_new(&core_space, &core_sqe, CORE_SQE_ADDRESS, (uint32_t)size - 4, PTE_CORE | PTE_READ_ONLY) ||
@@ -2607,7 +2607,7 @@ step_core_space(void)
  * qcom_mdt_load; adreno_gpu.c: zap_shader_load_mdt): after the header (step 12), TrustZone is
  * told where the image will be -- the two pages the device tree reserves for it
  * (reserved-memory gpu_micro_code@8b71a000, the zap-shader node's memory-region) --, the image's
- * one segment (the file a660_zap.b02, relocatable: at the start of that memory) is put there,
+ * one segment (the file a740_zap.b02, relocatable: at the start of that memory) is put there,
  * and TrustZone is asked to authenticate it and run it. The vendor's driver does this before it
  * starts the 3D core's command processor (a6xx_rb_start: a6xx_microcode_load), Linux after;
  * this phone's own order is kept. Once that is done the memory is TrustZone's, and nothing
@@ -2651,7 +2651,7 @@ step_zap_load(void)
 	announce("ask TrustZone to give up a zap shader that a kernel before this one may have left");
 	printf("adreno: %u: %s\n", step, zap_unload() ? "TrustZone has given up what it had (it says so with none, too)" :
 	    "TRUSTZONE DOES NOT GIVE IT UP: the next answers tell whether it keeps one");
-	segment = image_file("fw", "a660_zap.b02", &size);
+	segment = image_file("fw", "a740_zap.b02", &size);
 	if (segment == NULL || size == 0 || size > 0x1000) {
 		return false;
 	}
@@ -3168,7 +3168,7 @@ hakios_adreno_quiesce(void)
  * far it has got (a "fence": a submission's number, written by the core when it is through
  * with it). The caller holds one lock around all of these.
  */
-#define GPU_CHIP_ID             0x06030500ull   /* dt: qcom,chipid */
+#define GPU_CHIP_ID             0x43050a01ull   /* dt: qcom,chipid (Adreno 740, "C510v2", ADRENO_7XX_GEN2) */
 #define GPU_ADDRESSES_START     0x20000000ull   /* above everything the steps use; below 4 GB, as Linux keeps them */
 #define GPU_ADDRESSES_SIZE      0xe0000000ull
 #define GPU_FENCE_AT            0x40            /* in the scratch page */
@@ -3725,7 +3725,7 @@ extern vm_offset_t pe_arm_get_soc_base_phys(void);
 static bool
 start_by_itself(void)
 {
-	static const char *const files[] = { "a660_gmu.bin", "a660_sqe.fw", "a660_zap.mdt", "a660_zap.b02" };
+	static const char *const files[] = { "gmu_gen70200.bin", "a740_sqe.fw", "a740_zap.mdt", "a740_zap.b02" };
 	const char *missing = NULL;
 	uint64_t size;
 
