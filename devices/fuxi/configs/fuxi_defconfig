@@ -17,6 +17,12 @@ CONFIG_SOC="sm8550"
 # CONFIG_HAKIOS_PMIC is not set
 # CONFIG_HAKIOS_BATTGUARD is not set
 
+# --- their boot-arguments: a driver that is not built reads nothing, so its CONFIG_* argument
+#     would be an orphan the configuration check refuses. Unset each one alongside its driver. ---
+# CONFIG_CPUFREQ is not set
+# CONFIG_SOCINFO is not set
+# CONFIG_THERMAL is not set
+
 # --- peripherals: off until their drivers are ported to SM8550 ---
 # CONFIG_HAKIOS_ADSP is not set
 # CONFIG_HAKIOS_SPEAKER is not set
@@ -31,6 +37,14 @@ CONFIG_SOC="sm8550"
 # CONFIG_HAKIOS_MODEM is not set
 # CONFIG_HAKIOS_WIFI is not set
 # CONFIG_HAKIOS_BATTERY is not set
+
+# --- peripherals' boot-arguments, unset with their drivers (same orphan rule) ---
+# CONFIG_GPU is not set
+# CONFIG_ADSP is not set
+# CONFIG_SOUND is not set
+# CONFIG_WIFI is not set
+# CONFIG_MODEM is not set
+# CONFIG_MODEM_AGAIN is not set
 
 # --- touch: ST FTM5 (not Goodix; a FTM5 driver is still to be ported) ---
 # CONFIG_HAKIOS_GOODIX is not set
