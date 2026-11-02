@@ -37,17 +37,17 @@ jobs:
           ls -la "$HOME/theos/toolchain/linux/iphone/bin/" 2>/dev/null | head || echo "toolchain 未装好"
           test -x "$HOME/theos/toolchain/linux/iphone/bin/clang" && echo "clang OK" || echo "clang MISSING"
 
-      - name: Sync device repositories (redwood)
+      - name: Sync device repositories
         run: |
           # make devices 只 list，要真正克隆用 sync
           tools/hakios-device.py sync
 
-      - name: Build the kernel (redwood, the reference device)
+      - name: Build the kernel (fuxi)
         env:
           DSYMUTIL: /home/runner/theos/toolchain/linux/iphone/bin/dsymutil
           BUILD_DSYM: "0"
         run: |
-          make redwood_defconfig
+          make fuxi_defconfig
           # make kernel 会自己触发 setup.sh（stage1+stage2）；不要手动 --stage1，
           # 否则 [ -e host/bin/ld64 ] 判定为真会跳过 stage2 的 Mach-O 头文件复制
           # DSYMUTIL 指向 theos 的 dsymutil，BUILD_DSYM=0 跳过调试符号（内核运行不需要）
