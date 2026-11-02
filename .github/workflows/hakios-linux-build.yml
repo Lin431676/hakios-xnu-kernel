@@ -44,7 +44,7 @@ jobs:
 
       - name: Build the kernel (redwood, the reference device)
         env:
-          DSYMUTIL: $HOME/theos/toolchain/linux/iphone/bin/dsymutil
+          DSYMUTIL: /home/runner/theos/toolchain/linux/iphone/bin/dsymutil
           BUILD_DSYM: "0"
         run: |
           make redwood_defconfig
