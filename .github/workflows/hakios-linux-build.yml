@@ -42,13 +42,11 @@ jobs:
           # make devices 只 list，要真正克隆用 sync
           tools/hakios-device.py sync
 
-      - name: Set up kernel deps (stage 1)
-        run: |
-          bash xnu-deps/setup.sh --stage1
-
       - name: Build the kernel (redwood, the reference device)
         run: |
           make redwood_defconfig
+          # make kernel 会自己触发 setup.sh（stage1+stage2）；不要手动 --stage1，
+          # 否则 [ -e host/bin/ld64 ] 判定为真会跳过 stage2 的 Mach-O 头文件复制
           make kernel
 
       - name: Report result
