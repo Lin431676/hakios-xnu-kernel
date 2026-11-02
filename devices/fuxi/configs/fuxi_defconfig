@@ -11,19 +11,19 @@ CONFIG_DEVICE="fuxi"
 CONFIG_SOC="sm8550"
 
 # --- bring-up: leave out the SoC-specific drivers until SM8550 addresses are filled in ---
-# socinfo and cpufreq are SM8550-adapted (socinfo: soc_smem boot-arg + SM8550 id in the name table;
-# cpufreq: soc_epss/soc_cmd_db boot-args); thermal/pmic still need their SM8550 addresses.
+# socinfo/cpufreq/thermal/pmic are SM8550-adapted (boot-arg addresses from soc.args + SM8550 sensor table).
 CONFIG_HAKIOS_SOCINFO=y
 CONFIG_HAKIOS_CPUFREQ=y
-# CONFIG_HAKIOS_THERMAL is not set
-# CONFIG_HAKIOS_PMIC is not set
+CONFIG_HAKIOS_THERMAL=y
+CONFIG_HAKIOS_PMIC=y
 # CONFIG_HAKIOS_BATTGUARD is not set
 
 # --- their boot-arguments: a driver that is not built reads nothing, so its CONFIG_* argument
 #     would be an orphan the configuration check refuses. Unset each one alongside its driver. ---
 CONFIG_SOCINFO=y
 CONFIG_CPUFREQ=y
-# CONFIG_THERMAL is not set
+CONFIG_THERMAL=y
+CONFIG_PMIC=y
 
 # --- peripherals: off until their drivers are ported to SM8550 ---
 # CONFIG_HAKIOS_ADSP is not set
