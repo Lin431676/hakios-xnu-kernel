@@ -1872,6 +1872,10 @@ step_gmu_firmware(void)
 #define GMU_HFI_QTBL_INFO       GMU_WORD(0x5184)
 #define GMU_HFI_QTBL_ADDR       GMU_WORD(0x5185)
 #define GMU_HFI_CTRL_INIT       GMU_WORD(0x5186)
+/* A7xx moved the GMU chipid and log address to GENERAL_8/10 (Linux a6xx_gmu_fw_start a7xx branch); a6xx wrote
+ * them to HFI_SFR_ADDR / PWR_COL_CP_MSG. GENERAL_7 is 0x51cc, so 8/9/10 follow. */
+#define GMU_GENERAL_8           GMU_WORD(0x51cd)
+#define GMU_GENERAL_10          GMU_WORD(0x51cf)
 #define GMU_GMU2HOST_INTR_CLR   GMU_WORD(0x5191)
 #define GMU_GMU2HOST_INTR_INFO  GMU_WORD(0x5192)        /* bit 0: a message for us; bit 31: the 3D core is ours */
 #define GMU_HOST2GMU_INTR_SET   GMU_WORD(0x5194)        /* bit 0: a message for the GMU; bit 30, 31: see step 17 */
@@ -1951,17 +1955,19 @@ step_gmu_start(void)
 	rsc_awake = true;
 	put(&gmu, "cx_falnext_intf", GMU_CX_FALNEXT_INTF, 1);
 	put(&gmu, "cx_fal_intf", GMU_CX_FAL_INTF, 1);
+	/* A7xx: TCM retention moves to cx_misc's REG_A7XX_CX_MISC_TCM_RET_CNTL (via a6xx_llc_write), not GMU_GENERAL_7.
+	 * TODO: the cx_misc TCM_RET_CNTL byte offset is not yet confirmed from a6xx_gmu.xml; keep the a6xx write until it is. */
 	put(&gmu, "general_7", GMU_GENERAL_7, 1);
 	put(&gmu, "cm3_fw_init_result", GMU_CM3_FW_INIT_RESULT, 0);
 	put(&gmu, "cm3_boot_config", GMU_CM3_BOOT_CONFIG, 2);
 	put(&gmu, "hfi_qtbl_addr", GMU_HFI_QTBL_ADDR, GMU_HFI_ADDRESS);
 	put(&gmu, "hfi_qtbl_info", GMU_HFI_QTBL_INFO, 1);
-	put(&gmu, "ahb_fence_range_0", GMU_AHB_FENCE_RANGE_0, 1u << 31 | (0xa << 2) << 18 | 0x8a0);
+	put(&gmu, "ahb_fence_range_0", GMU_AHB_FENCE_RANGE_0, 1u << 31 | (0x32u << 18) | 0x8a0);
 	put(&gmu, "cm3_cfg", GMU_CM3_CFG, 0x4052);
 	put(&gbif, "halt", GBIF_HALT, 0);
 	put(&gmu, "pwr_col_cp_resp", GMU_PWR_COL_CP_RESP, 0);
-	put(&gmu, "hfi_sfr_addr", GMU_HFI_SFR_ADDR, GMU_CHIP);
-	put(&gmu, "pwr_col_cp_msg", GMU_PWR_COL_CP_MSG, GMU_LOG_ADDRESS | (GMU_LOG_SIZE / 4096 - 1));
+	put(&gmu, "general_10", GMU_GENERAL_10, GMU_CHIP);        /* A7xx: the GMU chipid goes to GENERAL_10, not HFI_SFR_ADDR */
+	put(&gmu, "general_8", GMU_GENERAL_8, GMU_LOG_ADDRESS | (GMU_LOG_SIZE / 4096 - 1));  /* A7xx: log address to GENERAL_8 */
 	put(&gmu, "sys_bus_config", GMU_SYS_BUS_CONFIG, 1);
 	put(&gmu, "icache_config", GMU_ICACHE_CONFIG, 1);
 	put(&gmu, "dcache_config", GMU_DCACHE_CONFIG, 1);
