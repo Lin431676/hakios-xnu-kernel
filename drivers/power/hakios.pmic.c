@@ -87,7 +87,9 @@ wr(vm_offset_t address, uint32_t value)
 	*(volatile uint32_t *)address = value;
 }
 
-/* the arbiter, as drivers/input/hakios.buttons.c maps it */
+/* the arbiter, as drivers/input/hakios.buttons.c maps it. SM8550 ("kalama", fuxi) has it at 0xc42d000 (core) and
+ * 0xc500000 (observer); the reference phone (SC7280) at 0x0c440000 / 0x0e600000. A boot-arg overrides each
+ * (soc_spmi_core / soc_spmi_obsrvr) from the phone's soc.args. */
 #define ARB_CORE_PHYS           0x0c440000UL
 #define ARB_CORE_SIZE           0x1100UL
 #define ARB_CNFG_PHYS           0x0c40a000UL
@@ -113,6 +115,7 @@ wr(vm_offset_t address, uint32_t value)
 #define READ_TIMEOUT_US         2000
 
 static vm_offset_t arb_core, arb_observer;
+static uint32_t arb_core_phys = ARB_CORE_PHYS, arb_observer_phys = ARB_OBSERVER_PHYS;
 
 /* Read `count` (1 to 8) registers of the peripheral at channel `channel`, from register `reg`; NULL, or what went wrong. */
 static const char *
@@ -217,8 +220,8 @@ pmic_run(__unused thread_call_param_t p0, __unused thread_call_param_t p1)
 	uint16_t ppids[ARB_MAX_CHANNELS];
 	uint16_t channel_of[ARB_MAX_CHANNELS];
 
-	arb_core = ml_io_map(ARB_CORE_PHYS, ARB_CORE_SIZE);
-	arb_observer = ml_io_map(ARB_OBSERVER_PHYS, ARB_OBSERVER_SIZE);
+	arb_core = ml_io_map(arb_core_phys, ARB_CORE_SIZE);
+	arb_observer = ml_io_map(arb_observer_phys, ARB_OBSERVER_SIZE);
 	if (arb_core == 0 || arb_observer == 0) {
 		say("pmic: could not map the PMIC arbiter\n");
 		goto out;
@@ -296,6 +299,8 @@ pmic_init(void)
 	if (!PE_parse_boot_argn("pmic", &enabled, sizeof(enabled)) || !enabled) {
 		return;
 	}
+	(void)PE_parse_boot_argn("soc_spmi_core", &arb_core_phys, sizeof(arb_core_phys));
+	(void)PE_parse_boot_argn("soc_spmi_obsrvr", &arb_observer_phys, sizeof(arb_observer_phys));
 	(void)PE_parse_boot_argn("pmic_list", &list, sizeof(list));
 	list_all = list != 0;
 	/* once, from a thread call: the reads wait on the bus, and that is no place for the startup thread */
