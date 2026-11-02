@@ -283,10 +283,10 @@ wait_for(struct block *b, uint32_t offset, uint32_t mask, uint32_t value, uint32
  * gcc-sc7280.c. The touch screen driver uses this controller too.
  */
 static struct block gcc = { "gcc", 0x00100000, 0x80000 };
-#define GCC_PLL_VOTE            0x52000         /* bit 15: gcc_gpu_gpll0_clk_src (600 MHz), bit 16: ..._div_clk_src (300 MHz) */
+#define GCC_PLL_VOTE            0x52000         /* bit 15: gcc_gpu_gpll0_clk_src, bit 16: ..._div_clk_src */
 #define GCC_PLL_VOTE_GPU_DIV    (1u << 16)
 #define GCC_GPU_CFG_AHB_CBCR    0x71004
-#define GCC_GPU_MEMNOC_GFX_CBCR 0x7100c
+#define GCC_GPU_MEMNOC_GFX_CBCR 0x71010         /* SM8550 (gcc-sm8550.c): 0x71010; SC7280 was 0x7100c */
 #define GCC_GPU_SNOC_DVM_GFX_CBCR 0x71018
 #define GCC_DDRSS_GPU_AXI_CBCR  0x71154
 #define CBCR_ENABLE             (1u << 0)       /* a clock's control register: on */
@@ -459,25 +459,25 @@ step_fuses(void)
  * registers answer only while gcc_gpu_cfg_ahb runs, which Linux turns on for good when it
  * starts (gcc-sc7280.c, the end of the probe function).
  */
-static struct block gpucc = { "gpucc", 0x03d90000, 0x9000 };
+static struct block gpucc = { "gpucc", 0x03d90000, 0xa000 };
 #define GPUCC_PLL0_MODE         0x0000          /* the 3D core's PLL: bit 31 locked, bit 0 output on; +4: times 19.2 MHz */
-#define GPUCC_PLL1_MODE         0x0100          /* a 500 MHz PLL, an alternative source for the GMU's clock */
-#define GPUCC_CXO_AON_CBCR      0x1004
+#define GPUCC_PLL1_MODE         0x1000          /* SM8550 (gpucc-sm8550.c): gpu_cc_pll1; SC7280 was 0x0100 */
+#define GPUCC_CXO_AON_CBCR      0x9004          /* SM8550; SC7280 was 0x1004 */
 #define GPUCC_GX_SW_RESET       0x1008          /* dt: gpu_gx_sw_reset */
-#define GPUCC_GX_GDSCR          0x100c          /* dt: gpu_gx_gdsc, the 3D core's power switch: the GMU's to operate */
+#define GPUCC_GX_GDSCR          0x905c          /* SM8550 (gpu_cc_gx_gdsc); SC7280 was 0x100c */
 #define GPUCC_GX_GMU_CBCR       0x1064
-#define GPUCC_CX_GDSCR          0x106c          /* dt: gpu_cx_gdsc */
-#define GPUCC_AHB_CBCR          0x1078          /* gpu_cc_ahb_clk: the register bus inside the GPU block */
-#define GPUCC_CX_GMU_CBCR       0x1098          /* gpu_cc_cx_gmu_clk: the GMU */
-#define GPUCC_CXO_CBCR          0x109c          /* gpu_cc_cxo_clk: the crystal, for the GMU's timers */
-#define GPUCC_GMU_RCGR          0x1120          /* gpu_cc_gmu_clk_src: +0 command, +4 source and divider */
+#define GPUCC_CX_GDSCR          0x9108          /* SM8550 (gpu_cc_cx_gdsc); SC7280 was 0x106c */
+#define GPUCC_AHB_CBCR          0x911c          /* SM8550 (gpu_cc_ahb_clk); SC7280 was 0x1078 */
+#define GPUCC_CX_GMU_CBCR       0x913c          /* SM8550 (gpu_cc_cx_gmu_clk); SC7280 was 0x1098 */
+#define GPUCC_CXO_CBCR          0x9144          /* SM8550 (gpu_cc_cxo_clk); SC7280 was 0x109c */
+#define GPUCC_GMU_RCGR          0x9318          /* SM8550 (gpu_cc_gmu_clk_src); SC7280 was 0x1120 */
 #define GPUCC_CB_CBCR           0x1170          /* gpu_cc_cb_clk: Linux keeps it on always */
 #define GPUCC_HUB_AON_CBCR      0x1178          /* gpu_cc_hub_aon_clk */
-#define GPUCC_HUB_RCGR          0x117c          /* gpu_cc_hub_clk_src */
-#define GPUCC_HUB_CX_INT_CBCR   0x1204          /* gpu_cc_hub_cx_int_clk */
-#define GPUCC_CX_HW_CTRL        0x1540          /* dt: gpu_cx_hw_ctrl: bit 31 is where the vendor's driver sees CX come on */
+#define GPUCC_HUB_RCGR          0x93ec          /* SM8550 (gpu_cc_hub_clk_src); SC7280 was 0x117c */
+#define GPUCC_HUB_CX_INT_CBCR   0x9148          /* SM8550 (gpu_cc_hub_cx_int_clk); SC7280 was 0x1204 */
+#define GPUCC_CX_HW_CTRL        0x953c          /* SM8550 (gpu_cx_gdsc gds_hw_ctrl); SC7280 was 0x1540 */
 #define GPUCC_GX_DOMAIN_MISC    0x158c          /* dt: gpu_gx_domain_addr */
-#define GPUCC_SMMU_VOTE_CBCR    0x5000          /* gpu_cc_hlos1_vote_gpu_smmu_clk: our vote for the SMMU's clock */
+#define GPUCC_SMMU_VOTE_CBCR    0x7000          /* SM8550 (gpu_cc_hlos1_vote_gpu_smmu_clk); SC7280 was 0x5000 */
 
 #define GDSC_SW_COLLAPSE        (1u << 0)       /* a power switch's control register (gdsc.c): off, by software */
 #define GDSC_HW_CONTROL         (1u << 1)       /* something else than software operates it */
