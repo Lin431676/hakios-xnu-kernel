@@ -44,8 +44,8 @@
  *   thermal_poll=<ms>  how often (200 to 60000; 2000)
  *   thermal_log=<s>    a summary line this often (0: only on a rise; 60)
  *   thermal_stop=<C>   stop the run at this temperature (0: never; 105)
- *   thermal_tm0=<pa>, thermal_tm1=<pa>  the two blocks' readings, when this is not the reference phone
- *                      (0xc263000 and 0xc265000)
+ *   thermal_tm0=<pa>, thermal_tm1=<pa>, thermal_tm2=<pa>  the blocks' readings, when this is not the
+ *                      reference phone (SM8550: 0xc271000, 0xc272000, 0xc273000)
  */
 #include <stdint.h>
 #include <kern/clock.h>
@@ -90,7 +90,9 @@ say(const char *format, ...)
 #define TEMP_MIN_TENTHS         (-400)
 #define TEMP_MAX_TENTHS         1600
 
-/* made by tools/dt-thermal.py from the phone's device tree: name, block, sensor, slow down at, gives up at (millidegrees) */
+/* made by tools/dt-thermal.py from the phone's device tree: sensor, the TSENS block it is in (the address of its
+ * readings), its number there, the temperature the vendor starts to slow down at, and the one it gives up at,
+ * in millidegrees. This is the Xiaomi 13 (fuxi, SM8550) table: three blocks, 16 + 16 + 9 sensors. */
 static const struct sensor_info {
 	const char *    name;
 	uint32_t        tm;
@@ -98,40 +100,59 @@ static const struct sensor_info {
 	int32_t         slow_mc;
 	int32_t         limit_mc;
 } sensors[] = {
-	{ "aoss-0", 0xc263000, 0, 115000, 125000 },
-	{ "cpu-0-0", 0xc263000, 1, 110000, 125000 },
-	{ "cpu-0-1", 0xc263000, 2, 110000, 125000 },
-	{ "cpu-0-2", 0xc263000, 3, 110000, 125000 },
-	{ "cpu-0-3", 0xc263000, 4, 110000, 125000 },
-	{ "cpuss-0", 0xc263000, 5, 115000, 125000 },
-	{ "cpuss-1", 0xc263000, 6, 115000, 125000 },
-	{ "cpu-1-0", 0xc263000, 7, 108000, 125000 },
-	{ "cpu-1-1", 0xc263000, 8, 108000, 125000 },
-	{ "cpu-1-2", 0xc263000, 9, 108000, 125000 },
-	{ "cpu-1-3", 0xc263000, 10, 108000, 125000 },
-	{ "cpu-1-4", 0xc263000, 11, 108000, 125000 },
-	{ "cpu-1-5", 0xc263000, 12, 108000, 125000 },
-	{ "cpu-1-6", 0xc263000, 13, 108000, 125000 },
-	{ "cpu-1-7", 0xc263000, 14, 108000, 125000 },
-	{ "aoss-1", 0xc265000, 0, 115000, 125000 },
-	{ "gpuss-0", 0xc265000, 1, 95000, 125000 },
-	{ "gpuss-1", 0xc265000, 2, 95000, 125000 },
-	{ "nspss-0", 0xc265000, 3, 100000, 125000 },
-	{ "nspss-1", 0xc265000, 4, 100000, 125000 },
-	{ "video", 0xc265000, 5, 100000, 125000 },
-	{ "ddr", 0xc265000, 6, 115000, 125000 },
-	{ "mdmss-0", 0xc265000, 7, 95000, 125000 },
-	{ "mdmss-1", 0xc265000, 8, 95000, 125000 },
-	{ "mdmss-2", 0xc265000, 9, 95000, 125000 },
-	{ "mdmss-3", 0xc265000, 10, 95000, 125000 },
-	{ "camera-0", 0xc265000, 11, 100000, 125000 },
+	{ "aoss-0", 0xc271000, 0, 115000, 125000 },
+	{ "cpuss-0", 0xc271000, 1, 115000, 125000 },
+	{ "cpuss-1", 0xc271000, 2, 115000, 125000 },
+	{ "cpuss-2", 0xc271000, 3, 115000, 125000 },
+	{ "cpuss-3", 0xc271000, 4, 115000, 125000 },
+	{ "cpu-1-0", 0xc271000, 5, 108000, 125000 },
+	{ "cpu-1-1", 0xc271000, 6, 108000, 125000 },
+	{ "cpu-1-2", 0xc271000, 7, 108000, 125000 },
+	{ "cpu-1-3", 0xc271000, 8, 108000, 125000 },
+	{ "cpu-1-4", 0xc271000, 9, 108000, 125000 },
+	{ "cpu-1-5", 0xc271000, 10, 108000, 125000 },
+	{ "cpu-1-6", 0xc271000, 11, 108000, 125000 },
+	{ "cpu-1-7", 0xc271000, 12, 108000, 125000 },
+	{ "cpu-1-8", 0xc271000, 13, 108000, 125000 },
+	{ "cpu-1-9", 0xc271000, 14, 108000, 125000 },
+	{ "cpu-1-10", 0xc271000, 15, 108000, 125000 },
+	{ "aoss-1", 0xc272000, 0, 115000, 125000 },
+	{ "cpu-0-0", 0xc272000, 1, 115000, 125000 },
+	{ "cpu-0-1", 0xc272000, 2, 110000, 125000 },
+	{ "cpu-0-2", 0xc272000, 3, 110000, 125000 },
+	{ "nspss-0", 0xc272000, 4, 95000, 125000 },
+	{ "nspss-1", 0xc272000, 5, 95000, 125000 },
+	{ "nspss-2", 0xc272000, 6, 95000, 125000 },
+	{ "nspss-3", 0xc272000, 7, 95000, 125000 },
+	{ "video", 0xc272000, 8, 115000, 125000 },
+	{ "ddr", 0xc272000, 9, 90000, 125000 },
+	{ "mdmss-0", 0xc272000, 10, 102000, 125000 },
+	{ "mdmss-1", 0xc272000, 11, 102000, 125000 },
+	{ "mdmss-2", 0xc272000, 12, 102000, 125000 },
+	{ "mdmss-3", 0xc272000, 13, 102000, 125000 },
+	{ "camera-0", 0xc272000, 14, 115000, 125000 },
+	{ "camera-1", 0xc272000, 15, 115000, 125000 },
+	{ "aoss-2", 0xc273000, 0, 115000, 125000 },
+	{ "gpuss-0", 0xc273000, 1, 95000, 125000 },
+	{ "gpuss-1", 0xc273000, 2, 95000, 125000 },
+	{ "gpuss-2", 0xc273000, 3, 95000, 125000 },
+	{ "gpuss-3", 0xc273000, 4, 95000, 125000 },
+	{ "gpuss-4", 0xc273000, 5, 95000, 125000 },
+	{ "gpuss-5", 0xc273000, 6, 95000, 125000 },
+	{ "gpuss-6", 0xc273000, 7, 95000, 125000 },
+	{ "gpuss-7", 0xc273000, 8, 95000, 125000 },
 };
 #define NSENSORS        ((unsigned)(sizeof(sensors) / sizeof(sensors[0])))
-#define REFERENCE_TM0   0xc263000u
-#define REFERENCE_TM1   0xc265000u
+/* The three TSENS blocks' TM (temperature monitor) register bases -- the address their status words are read from.
+ * SM8550 ("kalama"): tsens0/1/2 at 0xc271000/0xc272000/0xc273000 (16 + 16 + 9 sensors). The reference phone (SC7280)
+ * had two at 0xc263000/0xc265000; a boot-arg overrides each (thermal_tm0/tm1/tm2). */
+#define TM_BLOCKS       3
+#define REFERENCE_TM0   0xc271000u
+#define REFERENCE_TM1   0xc272000u
+#define REFERENCE_TM2   0xc273000u
 
-static vm_offset_t tm_va[2];
-static uint32_t tm_pa[2] = { REFERENCE_TM0, REFERENCE_TM1 };
+static vm_offset_t tm_va[TM_BLOCKS];
+static uint32_t tm_pa[TM_BLOCKS] = { REFERENCE_TM0, REFERENCE_TM1, REFERENCE_TM2 };
 static int32_t tenths[NSENSORS];                /* the last good reading; INT32_MIN: none yet */
 static uint32_t poll_ms = 2000, log_seconds = 60, stop_celsius = 105;
 static uint64_t last_log, reads;
@@ -159,6 +180,18 @@ hakios_thermal_max_mc(void)
 
 static thread_call_t call;
 
+/* which of the TM blocks a sensor is in, by the block's register address in the table */
+static unsigned
+block_of(uint32_t tm)
+{
+	for (unsigned b = 0; b < TM_BLOCKS; b++) {
+		if (tm == tm_pa[b]) {
+			return b;
+		}
+	}
+	return 0;
+}
+
 static void
 text_of(char *out, size_t size, int32_t tenth)
 {
@@ -176,7 +209,7 @@ look(void)
 
 	list[0] = 0;
 	for (unsigned i = 0; i < NSENSORS; i++) {
-		uint32_t status = *(volatile uint32_t *)(tm_va[sensors[i].tm == REFERENCE_TM0 ? 0 : 1] + TM_STATUS(sensors[i].number));
+		uint32_t status = *(volatile uint32_t *)(tm_va[block_of(sensors[i].tm)] + TM_STATUS(sensors[i].number));
 		int32_t value = (int32_t)(status << 20) >> 20;
 
 		if (!(status & TM_VALID) || value < TEMP_MIN_TENTHS || value > TEMP_MAX_TENTHS) {
@@ -259,6 +292,7 @@ thermal_init(void)
 	}
 	(void)PE_parse_boot_argn("thermal_tm0", &tm_pa[0], sizeof(tm_pa[0]));
 	(void)PE_parse_boot_argn("thermal_tm1", &tm_pa[1], sizeof(tm_pa[1]));
+	(void)PE_parse_boot_argn("thermal_tm2", &tm_pa[2], sizeof(tm_pa[2]));
 	if (PE_parse_boot_argn("thermal_poll", &value, sizeof(value)) && value >= 200 && value <= 60000) {
 		poll_ms = value;
 	}
@@ -268,15 +302,15 @@ thermal_init(void)
 	if (PE_parse_boot_argn("thermal_stop", &value, sizeof(value)) && value <= 160) {
 		stop_celsius = value;
 	}
-	for (unsigned b = 0; b < 2; b++) {
+	for (unsigned b = 0; b < TM_BLOCKS; b++) {
 		tm_va[b] = ml_io_map(tm_pa[b], TM_SIZE);
 		if (tm_va[b] == 0) {
 			say("thermal: could not map the sensors' block at %#x; off\n", tm_pa[b]);
 			return;
 		}
 	}
-	say("thermal: %u sensors in two blocks (%#x, %#x), every %u ms; stop at %u C%s\n", NSENSORS, tm_pa[0], tm_pa[1], poll_ms,
-	    stop_celsius, stop_celsius ? "" : " (off)");
+	say("thermal: %u sensors in %u blocks (%#x, %#x, %#x), every %u ms; stop at %u C%s\n", NSENSORS, TM_BLOCKS, tm_pa[0],
+	    tm_pa[1], tm_pa[2], poll_ms, stop_celsius, stop_celsius ? "" : " (off)");
 	call = thread_call_allocate(tick, NULL);
 	tick(NULL, NULL);
 }
