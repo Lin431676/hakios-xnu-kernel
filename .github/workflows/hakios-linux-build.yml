@@ -37,6 +37,10 @@ jobs:
           ls -la "$HOME/theos/toolchain/linux/iphone/bin/" 2>/dev/null | head || echo "toolchain 未装好"
           test -x "$HOME/theos/toolchain/linux/iphone/bin/clang" && echo "clang OK" || echo "clang MISSING"
 
+      - name: Sync device repositories (redwood)
+        run: |
+          make devices
+
       - name: Set up kernel deps (stage 1)
         run: |
           bash xnu-deps/setup.sh --stage1
