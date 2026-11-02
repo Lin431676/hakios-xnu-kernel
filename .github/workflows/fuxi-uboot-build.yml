@@ -1,0 +1,39 @@
+name: fuxi U-Boot build (Linux)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out hakiOS (with devices/fuxi/u-boot/files)
+        uses: actions/checkout@v4
+
+      - name: Install the AArch64 cross toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu device-tree-compiler python3
+
+      - name: Check out hakiOS's U-Boot (uefi/, u-boot branch)
+        run: |
+          git clone -q --depth 1 -b u-boot https://github.com/oosexgang/hakios-uefi.git uefi
+
+      - name: Apply hakiOS's changes to U-Boot (clone v2026.07 + patch + fuxi files)
+        run: |
+          uefi/u-boot/apply.sh fuxi
+
+      - name: Build U-Boot for fuxi
+        run: |
+          uefi/u-boot/build.sh fuxi
+
+      - name: Report the result
+        run: |
+          echo "=== u-boot.bin ==="
+          ls -la u-boot/build-fuxi/u-boot.bin 2>/dev/null || echo "no u-boot.bin produced"
+
+      - name: Upload the U-Boot binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuxi-u-boot
+          path: u-boot/build-fuxi/u-boot.bin
