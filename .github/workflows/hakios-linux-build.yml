@@ -27,7 +27,7 @@ jobs:
       - name: Install build deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y git curl tar xz-utils make clang lld flex bison m4 perl python3 autoconf automake libssl-dev fakeroot rsync zip libxml2
+          sudo apt-get install -y git curl tar xz-utils make clang lld flex bison m4 perl python3 autoconf automake libssl-dev fakeroot rsync zip libxml2 uuid-dev libz-dev libbz2-dev
 
       - name: Install theos (with Linux iOS toolchain + SDK)
         run: |
