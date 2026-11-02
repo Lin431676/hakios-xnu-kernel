@@ -216,6 +216,7 @@ static const struct { uint32_t id; const char *name; } known[] = {
 	{ 415, "SM8350" }, { 439, "SM8350" }, { 457, "SM8450" }, { 475, "SC7280 (SM7325, \"yupik\")" },
 	{ 487, "SC7280" }, { 497, "QCM6490" }, { 498, "QCS6490" }, { 483, "SM6350" }, { 434, "SM6350" },
 	{ 480, "SM7225" }, { 459, "SM7225" }, { 416, "SM8250" }, { 356, "SM8250" },
+	{ 519, "SM8550 (\"kalama\", Snapdragon 8 Gen 2)" }, { 536, "SM8550P" }, { 603, "QCS8550" }, { 604, "QCM8550" },
 };
 
 static const char *
